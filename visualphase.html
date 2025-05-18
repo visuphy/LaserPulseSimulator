@@ -77,8 +77,7 @@
                     <label><input type="radio" name="spectrumMode" value="gaussian" id="gaussianModeRadio" checked> Gaussian S(ω)</label>
                     <label><input type="radio" name="spectrumMode" value="custom" id="customModeRadio"> Custom S(ω)</label>
                 </div>
-                <!-- <button id="resetCustomSpectrumButton" style="display:none; margin-top: 10px;">Reset Custom Spectrum to Zero</button> --> <!-- MOVED -->
-                <small id="customSpectrumHelpText" style="display:none; display: block; text-align: center; margin-top: 10px; margin-bottom: 5px; font-size:0.85em; color:#555;">
+                <small id="customSpectrumHelpText" style="display: none; text-align: center; margin-top: 10px; margin-bottom: 5px; font-size:0.85em; color:#555;">
                     Move the red dots up and down to adjust S(ω) shape.
                 </small>
             </div>
@@ -99,7 +98,6 @@
                         <small id="omega0_custom_note" style="display:none; font-size:0.8em; color:#555;">Note: ω₀ sets phase reference. Uncheck "Auto-calculate" for manual input.</small>
                     </div>
 
-                    <!-- MOVED BUTTON HERE -->
                     <button id="resetCustomSpectrumButton" style="display:none; margin-top: 10px; margin-bottom: 15px; width: 100%;">Reset Custom Spectrum to Zero</button>
                     
                     <div id="gaussianControls"> <!-- This div now only contains delta_omega -->

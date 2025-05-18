@@ -585,6 +585,7 @@ gaussianModeRadio.addEventListener('change', () => {
         currentSpectrumMode = 'gaussian';
         gaussianControlsDiv.style.display = 'block';
         resetCustomSpectrumButton.style.display = 'none';
+        customSpectrumHelpText.style.display = 'none';
         if (charts.spectrumAndPhase) charts.spectrumAndPhase.data.datasets[2].hidden = true;
         canvasElements.spectrumAndPhase.style.cursor = 'default';
         updateOmega0ControlsCustomMode();
@@ -597,6 +598,7 @@ customModeRadio.addEventListener('change', () => {
         currentSpectrumMode = 'custom';
         gaussianControlsDiv.style.display = 'none';
         resetCustomSpectrumButton.style.display = 'block';
+        customSpectrumHelpText.style.display = 'block';
         initializeOrUpdateCustomSpectrumPoints(isInitialSwitchToCustom);
         if (charts.spectrumAndPhase) charts.spectrumAndPhase.data.datasets[2].hidden = false;
         isInitialSwitchToCustom = false;
