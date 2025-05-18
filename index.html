@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Laser Pulse Simulator - Introduction</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/physicify-simulab/physicify-simulab.github.io/refs/heads/main/favicon.png">
+
+    <!-- Font Awesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
+
+    <!-- Intro Page Styles (You might want a separate intro_style_visualphase.css or adapt the existing one) -->
+    <link rel="stylesheet" href="intro_style.css"> 
+
+    <!-- Shared Header & Footer Styles -->
+    <link rel="stylesheet" href="https://physicify-simulab.github.io/header.css">
+    <link rel="stylesheet" href="https://physicify-simulab.github.io/footer.css">
+</head>
+<body>
+
+    <!-- Dynamic Header Include -->
+    <div id="header-placeholder"></div>
+
+    <!-- Main Introduction Content -->
+    <main class="intro-container">
+
+        <h1>Welcome to the Laser Pulse Simulator</h1>
+
+        <!-- Simulator Preview with Play Button -->
+        <div class="simulator-preview">
+            <!-- IMPORTANT: Replace with an actual screenshot of your visualphase.html simulator -->
+            <img src="Screenshot.png" alt="Screenshot of the Laser Pulse Simulator">
+            <a href="visualphase.html" class="play-link" title="Launch Simulator">
+                <div class="play-button">
+                    <i class="fas fa-play"></i>
+                </div>
+            </a>
+        </div>
+
+        <!-- Information Section (Modified) -->
+        <section class="info-section">
+            <p>
+                <span class="author-info">
+                    Original Author: <a href="https://github.com/Hussein-Tofaili" target="_blank">Hussein-Tofaili</a>
+                </span>
+                <span class="info-separator">|</span>
+                <span class="source-info">
+                    Source Code: <a href="https://github.com/physicify-simulab/LaserPulseSimulator" target="_blank">
+                        <i class="fab fa-github"></i> GitHub Repository
+                    </a>
+                </span>
+            </p>
+        </section>
+
+        <!-- Description Section -->
+        <section class="description">
+            <h2>About This Simulator</h2>
+            <p>
+                This interactive tool qualitatively (arbitrary units) demonstrates how a laser pulse is formed from the superposition of continuous waves with different frequencies, amplitudes, and phases.
+            </p>
+            <p>
+                Explore the relationship between the spectral amplitude S(ω), spectral phase Φ(ω), and the resulting temporal electric field E(t) and intensity I(t) of the pulse. You can choose a Gaussian spectrum or define a custom one.
+            </p>
+            <p>
+                Adjust parameters like central frequency (ω₀), spectral bandwidth (for Gaussian spectrum), and Taylor series coefficients for the spectral phase (Φ(ω) = c₀ + c₁(ω-ω₀) + c₂(ω-ω₀)² + c₃(ω-ω₀)³) to observe their impact on the pulse shape, position, and characteristics like chirp.
+            </p>
+            <p>
+                Visualize individual cosine waves, their sum (the electric field), and the pulse intensity. This simulator is ideal for understanding concepts like group delay, group delay dispersion (GDD), and higher-order dispersion effects on ultrashort laser pulses.
+            </p>
+            <p>
+                We appreciate your feedback! If you encounter any issues or have suggestions for improvement, please report them on our <a href="https://github.com/physicify-simulab/LaserPulseSimulator/issues" target="_blank" rel="noopener noreferrer">GitHub Issues page</a>.
+            </p>
+             <p>
+                Click the play button above to launch the simulator!
+             </p>
+        </section>
+
+        <!-- Comments Section -->
+    <script src="https://giscus.app/client.js"
+        data-repo="physicify-simulab/LaserPulseSimulator"
+        data-repo-id="R_kgDOOsK5yA"
+        data-category="Comments"
+        data-category-id="DIC_kwDOOsK5yM4CqTW_"
+        data-mapping="pathname"
+        data-strict="0"
+        data-reactions-enabled="1"
+        data-emit-metadata="0"
+        data-input-position="bottom"
+        data-theme="light"
+        data-lang="en"
+        crossorigin="anonymous"
+        async>
+    </script>
+
+    </main>
+
+    <!-- Dynamic Footer Include -->
+    <div id="footer-placeholder"></div>
+
+    <!-- Script for Header/Footer Includes -->
+    <script>
+        // Simple function to fetch and insert external HTML snippets
+        function includeHTML(elementId, filePath) {
+          fetch(filePath)
+            .then(response => {
+                if (!response.ok) { throw new Error(`HTTP error! status: ${response.status}`); }
+                return response.text();
+            })
+            .then(data => {
+              const element = document.getElementById(elementId);
+              if (element) { element.innerHTML = data; }
+              else { console.error(`Element with ID '${elementId}' not found.`); }
+            })
+            .catch(error => console.error('Error loading ' + filePath, error));
+        }
+        includeHTML('header-placeholder', 'https://physicify-simulab.github.io/header.html');
+        includeHTML('footer-placeholder', 'https://physicify-simulab.github.io/footer.html');
+      </script>
+</body>
+</html>

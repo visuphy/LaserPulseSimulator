@@ -1,0 +1,489 @@
+/* CSS Variables adapted for a LIGHT THEME, but keeping structure for header */
+:root {
+  /* Background shades (LIGHT THEME) */
+  --bg-body:         #f0f2f5;  /* Original light body background */
+  --bg-container:    #ffffff;  /* Main container background (e.g., white or light gray) */
+  --bg-panel:        #ffffff;  /* Panels, like the header block itself */
+  --bg-box-inner:    #fdfdfd;  /* Inner boxes like slider columns */
+  --bg-input:        #ffffff;  /* Input field backgrounds */
+  --bg-button-header:#e9e9ed;  /* Light gray for header buttons/icons if needed, or transparent */
+  --bg-button:       #007bff;  /* Example: Blue for general buttons */
+
+  /* Border color (LIGHT THEME) */
+  --border:          #d1d5da;  /* Light gray border */
+
+  /* Primary text (LIGHT THEME) */
+  --text-primary:    #2c3e50;  /* Dark text for main content */
+  --text-secondary:  #586069;  /* Slightly lighter dark text */
+  --text-header-title: #1f2328; /* Darker text for main H1 title */
+
+  /* Accent (foreground) colors (Can be kept or adapted) */
+  --accent-red:      #d73a49;
+  --accent-yellow:   #f2c94c; /* Adjusted for better visibility on light */
+  --accent-green:    #28a745;
+  --accent-blue:     #0074d9; /* Re-using a standard blue */
+  --link-color:      var(--accent-blue);
+  --link-hover-color: #0056b3;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; /* Original font */
+    margin: 0;
+    padding: 15px; /* Adjusted to match polarization.html's body margin for header consistency */
+    background-color: var(--bg-body);
+    color: var(--text-primary);
+    line-height: 1.6;
+}
+
+/* --- START: H1 block styling adapted for LIGHT THEME from polarization.css --- */
+/* The H1 block itself will have a light panel background */
+h1 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 3px;
+  margin: 0 15px 10px 15px; /* Consistent with polarization.html for positioning */
+  font-size: 1.7em;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 10px;
+  background-color: var(--bg-panel); /* Light panel background for the H1 block */
+  padding: 8px 15px;
+  border-radius: 4px;
+  color: var(--text-header-title); /* Dark text for the main title span */
+}
+
+/* Wrapper for title and copyright */
+.h1-title-group {
+    flex-shrink: 0;
+}
+
+/* Define span for the title part */
+.h1-title {
+  flex-grow: 1;
+  margin-right: 10px;
+  display: block;
+  color: var(--text-header-title); /* Ensure main title span is dark */
+}
+
+/* Style for copyright below title */
+.h1-copyright {
+    font-size: 0.8rem;
+    color: var(--text-secondary); /* Slightly lighter dark text for copyright */
+    margin-top: 2px;
+    line-height: 1.2;
+    font-weight: normal;
+}
+.h1-copyright a {
+    color: inherit;
+    text-decoration: none;
+}
+.h1-copyright a:hover {
+    text-decoration: underline;
+    color: var(--link-hover-color); /* Use link hover color */
+}
+
+/* Style the container for the info */
+.h1-info {
+  display: flex;
+  gap: 20px;
+  font-size: 0.6em; /* Relative to h1 font size */
+  line-height: 1.3;
+  text-align: center;
+  color: var(--text-secondary); /* Slightly lighter dark text for info block */
+  margin-left: auto;
+  flex-shrink: 0;
+  align-items: flex-start;
+}
+
+/* Style for each info block */
+.info-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 80px;
+}
+
+/* Style for the labels */
+.info-label {
+  font-size: 0.8em;
+  font-weight: bold;
+  color: var(--text-secondary);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Style for the content below label */
+.info-content {
+  font-size: 0.95em;
+}
+
+/* Style the links within the info block */
+.h1-info a {
+  color: var(--link-color); /* Use defined link color */
+  text-decoration: none;
+  display: inline-block;
+  vertical-align: middle;
+}
+.h1-info a:hover {
+  text-decoration: underline;
+  color: var(--link-hover-color); /* Use defined link hover color */
+}
+
+/* General style for icons within info links */
+.h1-info a i {
+  font-size: 1.8em;
+  line-height: 1;
+  color: var(--text-primary); /* Dark icons on light background */
+  vertical-align: middle;
+  transition: color 0.2s ease; /* Simpler transition for light theme */
+}
+.h1-info a:hover i {
+  color: var(--link-hover-color); /* Icon color on hover matches link hover */
+}
+
+/* GitHub icon styling (already suitable for light if --text-primary is dark) */
+.h1-info a .fab.fa-github {
+   color: var(--text-primary); /* Dark GitHub icon */
+}
+.h1-info a:hover .fab.fa-github {
+  color: var(--link-hover-color);
+}
+.h1-info a:hover .fa-solid.fa-file-invoice {
+   color: var(--link-hover-color);
+}
+/* --- END: H1 block styling --- */
+
+
+/* Original visualphase.css h2, h3 styling - now using --text-primary */
+h2, h3 {
+    text-align: center;
+    color: var(--text-primary);
+    margin-bottom: 0.5em;
+}
+h2 { font-size: 1.4em; margin-top: 1em; } /* Add space below new H1 block */
+h3 { margin-top: 1em; }
+
+
+.container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 25px;
+    background-color: var(--bg-container); /* Keep original or use var if defined for light theme */
+    padding: 20px; /* To match polarization.css if needed, or keep original visualphase style */
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    max-width: 1800px;
+    margin: 0 auto 20px auto;
+}
+
+.controls {
+    flex: 1 1 340px;
+    min-width: 300px;
+    background-color: #ffffff; /* Original light background */
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08); /* Original shadow for light theme */
+    /* border: 1px solid var(--border); */ /* Can use border or shadow */
+}
+
+.plots {
+    flex: 2 1 450px;
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 20px;
+}
+
+.slider-columns-container {
+    display: flex;
+    gap: 20px;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+
+.slider-column {
+    flex: 1;
+    border: 1px solid #ddd; /* Original light border */
+    padding: 15px;
+    border-radius: 6px;
+    background-color: #fdfdfd; /* Original light inner box background */
+}
+
+.slider-column h3 {
+    text-align: left;
+    font-size: 1.05em;
+    margin-top: 0;
+    margin-bottom: 0.3em;
+    color: var(--text-primary); /* Uses body's primary text color */
+}
+
+.slider-column p {
+    font-size: 0.9em;
+    color: #555; /* Original slightly lighter text */
+    text-align: left;
+    margin-top: 0;
+    margin-bottom: 1em;
+}
+
+.slider-group {
+    margin-bottom: 18px;
+}
+
+.slider-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 500;
+    color: #555; /* Original */
+    font-size: 0.95em;
+}
+
+.slider-input-wrapper {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.slider-input-wrapper input[type="range"] {
+    flex-grow: 1;
+    width: auto;
+    margin-right: 0;
+}
+
+.slider-input-wrapper input[type="number"] {
+    width: 70px;
+    padding: 4px 6px;
+    border: 1px solid #ccc; /* Original */
+    border-radius: 4px;
+    font-size: 0.9em;
+    text-align: right;
+    box-sizing: border-box;
+    background-color: var(--bg-input); /* White or very light gray */
+    color: var(--text-primary);       /* Dark text */
+}
+
+.checkbox-group {
+    margin-top: 10px;
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.checkbox-group input[type="checkbox"],
+.spectrum-mode-selector input[type="radio"] {
+    margin-right: 8px;
+    width: 16px;
+    height: 16px;
+    vertical-align: middle;
+}
+
+.checkbox-group label,
+.spectrum-mode-selector label {
+    font-size: 0.95em;
+    color: #555; /* Original */
+    vertical-align: middle;
+    cursor: pointer;
+    margin-right: 15px;
+}
+.spectrum-mode-selector label:last-child {
+    margin-right: 0;
+}
+
+
+.plot-container {
+    background-color: #ffffff; /* Original */
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.08); /* Original */
+    min-height: 320px;
+    display: flex;
+    flex-direction: column;
+}
+
+.plot-container h3 {
+    text-align: center;
+    font-size: 1.15em;
+    margin-top: 0.2em;
+    margin-bottom: 0.5em;
+    color: var(--text-primary); /* Uses body's primary text color */
+}
+
+
+.plot-container canvas {
+    width: 100% !important;
+    height: 280px !important;
+    flex-shrink: 0;
+}
+
+.spectrum-mode-selector {
+    text-align: center;
+    margin-top: 10px;
+    margin-bottom: 5px;
+}
+
+#resetCustomSpectrumButton {
+    padding: 8px 12px;
+    font-size: 0.9em;
+    background-color: #e74c3c; /* Original red */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    /* display: block; MOVED TO INLINE or determined by inline */
+    /* margin-left: auto; MOVED TO INLINE or determined by inline */
+    /* margin-right: auto; MOVED TO INLINE or determined by inline */
+}
+#resetCustomSpectrumButton:hover {
+    background-color: #c0392b; /* Original darker red */
+}
+
+.checkbox-group-inline {
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+.checkbox-group-inline input[type="checkbox"] {
+    margin-right: 5px;
+}
+.checkbox-group-inline label {
+    font-weight: normal;
+    color: #555; /* Original */
+}
+
+#omega0_custom_note {
+    font-size:0.8em;
+    color: #555; /* Original */
+    display:none;
+}
+
+/* Style for disabled slider group (omega0 specifically) */
+#omega0SliderGroup.disabled-group label,
+#omega0SliderGroup.disabled-group small {
+    color: #999; /* Lighter text for disabled state */
+}
+#omega0SliderGroup.disabled-group input[type="range"],
+#omega0SliderGroup.disabled-group input[type="number"] {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.slider-group input[type="range"]:disabled,
+.slider-group input[type="number"]:disabled {
+    opacity: 0.6;
+    /* background-color: #e9ecef; Light gray for disabled inputs */
+    /* color: #6c757d; */
+    /* border-color: #ced4da; */
+}
+
+/* --- Media Queries --- */
+/* Base media queries from visualphase.css */
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+    }
+    .container {
+        flex-direction: column;
+        /* padding: 15px; */ /* Keep original container padding or adjust */
+    }
+    .controls, .plots {
+        flex-basis: auto;
+        width: 100%;
+        flex-grow: 0;
+        flex-shrink: 1;
+        min-width: unset;
+    }
+
+    .slider-columns-container {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    /* Copied H1 related media queries from polarization.css for 768px */
+    h1 {
+      font-size: 1.5em;
+      margin: 0 10px 8px 10px;
+      padding: 6px 10px;
+    }
+    .h1-info {
+      font-size: 0.65em;
+      margin-left: 0;
+      flex-basis: 100%;
+      margin-top: 8px;
+      justify-content: space-around;
+      gap: 10px;
+    }
+    .info-item { min-width: 60px; }
+}
+
+@media (max-width: 420px) {
+    body {
+        padding: 10px;
+    }
+    .controls h2 { font-size: 1.15em; }
+    .plot-container h3, .slider-column h3 { font-size: 1em; }
+
+    .controls {
+        padding: 12px;
+    }
+    .slider-column {
+        padding: 10px;
+    }
+
+    .slider-input-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 5px;
+    }
+    .slider-group label {
+        font-size: 0.9em;
+    }
+
+    .plot-container {
+        padding: 10px;
+        min-height: 260px;
+    }
+    .plot-container canvas {
+        height: 220px !important;
+    }
+
+    /* Copied H1 related media queries from polarization.css for 480px (applies here too) */
+    h1 {
+       font-size: 1.4em;
+       margin: 0 8px 6px 8px;
+       padding: 5px 8px;
+       gap: 5px;
+    }
+   .h1-title-group {
+       flex-basis: 100%;
+   }
+  .h1-info {
+      font-size: 0.7em;
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+      text-align: left;
+      width: 100%;
+      margin-top: 0;
+  }
+  .info-item {
+     flex-direction: row;
+     align-items: baseline;
+     gap: 6px;
+     min-width: 0;
+     width: 100%;
+  }
+  .info-label {
+      margin-bottom: 0;
+      text-align: left;
+      flex-shrink: 0;
+      min-width: 80px;
+      text-transform: none;
+      letter-spacing: 0;
+  }
+   .info-content { text-align: left; }
+   .h1-info a i { font-size: 1.5em; }
+}
