@@ -262,7 +262,7 @@ function calculateEffectiveCustomFWHMAndCenter() { // No changes to its internal
     return { center: centroid, fwhm: fwhm };
 }
 
-// --- Update and Plotting Logic --- (No changes to its structure)
+// --- Update and Plotting Logic ---
 function updatePlots() {
     let omega0_slider_val_manual = parseFloat(sliders.omega0.value);
     let delta_omega_fwhm_gaussian = parseFloat(sliders.delta_omega.value);
@@ -398,19 +398,22 @@ function updatePlots() {
         const phi_k = calculateSpectralPhase(om_k, omega0_phase_reference, phi0_coeff, phi1_coeff, phi2_coeff, phi3_coeff);
 
         timeArray.forEach((t, t_idx) => {
-            const arg = om_k * t + phi_k;
+            // MODIFICATION: Changed argument for cosine and sine to match common optics convention
+            const arg = phi_k - om_k * t; 
             sumCosinesDataY[t_idx] += A_k * Math.cos(arg);
-            sumSinesDataY[t_idx] += A_k * Math.sin(arg);
+            sumSinesDataY[t_idx] += A_k * Math.sin(arg); // Envelope calculation should use the same argument for consistency
         });
         
-        if (Math.abs(om_k) < 1e-9) continue;
+        if (Math.abs(om_k) < 1e-9) continue; // Skip DC component for individual plotting if desired, or handle separately
 
         if (showPeakConnector) {
-            let t_peak_k = (Math.abs(om_k) > 1e-6) ? -phi_k / om_k : 0;
+            // MODIFICATION: Adjusted t_peak_k for the new convention
+            let t_peak_k = (Math.abs(om_k) > 1e-6) ? phi_k / om_k : 0; 
             t_peak_k = Math.max(T_MIN, Math.min(T_MAX, t_peak_k));
             peakConnectorData.push({ x: t_peak_k, y: A_k - plottedCosCount * INDIVIDUAL_COS_Y_OFFSET });
         }
-        const waveYValues = timeArray.map(t => A_k * Math.cos(om_k * t + phi_k));
+        // MODIFICATION: Changed argument for individual cosine waves
+        const waveYValues = timeArray.map(t => A_k * Math.cos(phi_k - om_k * t)); 
         individualCosinesDatasets.push({
             label: `ω=${om_k.toFixed(2)}, A=${A_k.toFixed(2)}`,
             data: timeArray.map((t, t_idx) => ({ x: t, y: waveYValues[t_idx] - plottedCosCount * INDIVIDUAL_COS_Y_OFFSET })),
@@ -426,6 +429,7 @@ function updatePlots() {
 
     const sumCosinesData = timeArray.map((t, idx) => ({ x: t, y: sumCosinesDataY[idx] }));
     const sumIntensityData = timeArray.map((t, idx) => ({ x: t, y: Math.pow(sumCosinesDataY[idx], 2) }));
+    // Envelope calculation uses sumCosinesDataY and sumSinesDataY which are now based on the new 'arg'
     const envelopeEData = timeArray.map((t, idx) => ({ x: t, y: Math.sqrt(Math.pow(sumCosinesDataY[idx], 2) + Math.pow(sumSinesDataY[idx], 2)) }));
     const envelopeIData = envelopeEData.map(point => ({ x: point.x, y: Math.pow(point.y, 2) }));
 
@@ -532,8 +536,8 @@ function initCharts() { // MODIFIED: Removed tension from S(omega) dataset
     });
     charts.individualCosines = new Chart(canvasElements.individualCosines.getContext('2d'), { type: 'line', data: { datasets: [] }, options: { ...baseChartOptions, elements: {...baseChartOptions.elements, line: {tension: 0.1}}, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, display: true, position: 'top', onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Amplitude (Offset)' } } } } });
     charts.sumCosines = new Chart(canvasElements.sumCosines.getContext('2d'), { type: 'line', data: { datasets: [{ label: 'Summed Pulse E(t)', data: [], borderColor: '#e74c3c', borderWidth: 2, fill: false, tension: 0.1 }, { label: 'E(t) Envelope', data: [], borderColor: '#f1a7a0', borderWidth: 1.5, borderDash: [5, 5], fill: false, tension: 0.1 }] }, options: { ...baseChartOptions, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Amplitude E(t)' } } } } });
-    charts.sumIntensity = new Chart(canvasElements.sumIntensity.getContext('2d'), { type: 'line', data: { datasets: [{ label: 'Intensity I(t)', data: [], borderColor: '#9b59b6', borderWidth: 2, fill: false, tension: 0.1 }, { label: 'I(t) Envelope', data: [], borderColor: '#cda5d8', borderWidth: 1.5, borderDash: [5, 5], fill: false, tension: 0.1 }] }, options: { ...baseChartOptions, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Intensity I(t) (a.u.)' }, min: 0 } } } });
-}
+    charts.sumIntensity = new Chart(canvasElements.sumIntensity.getContext('2d'), { type: 'line', data: { datasets: [{ label: 'Intensity I(t)', data: [], borderColor: '#9b59b6', borderWidth: 2, fill: false, tension: 0.1 }, { label: 'I(t) Envelope', data: [], borderColor: '#cda5d8', borderWidth: 1.5, borderDash: [5, 5], fill: false, tension: 0.1 }] }, options: { ...baseChartOptions, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Intensity I(t) (a.u.)' }, min: 0 } } } } )};
+
 
 // --- UI Control Logic --- (No changes)
 function updateOmega0ControlsCustomMode() {
