@@ -2,7 +2,7 @@
 
 Welcome to the **Laser Pulse Simulator**, a web-based interactive tool for visualizing the formation of a laser pulse from its constituent frequencies. This simulator qualitatively demonstrates how the spectral amplitude and phase of continuous waves determine the final temporal shape and intensity of a pulse.
 
-[![Laser Pulse Simulator Screenshot](Screenshot.png)](https://physicify-simulab.github.io/LaserPulseSimulator/visualphase.html)
+[![Laser Pulse Simulator Screenshot](Screenshot.png)](/LaserPulseSimulator/visualphase.html)
 
 *Screenshot of the simulator interface, showing the spectral and temporal plots.*
 
@@ -10,7 +10,7 @@ Welcome to the **Laser Pulse Simulator**, a web-based interactive tool for visua
 
 ## 🚀 Live Demo
 
-**[Click here to launch the simulator!](https://physicify-simulab.github.io/LaserPulseSimulator/)**
+**[Click here to launch the simulator!](/LaserPulseSimulator/)**
 
 ---
 
@@ -47,7 +47,7 @@ Key concepts you can explore include:
 
 ## 🛠️ How to Use
 
-1.  **Launch the Simulator**: Open the [live demo link](https://physicify-simulab.github.io/LaserPulseSimulator/).
+1.  **Launch the Simulator**: Open the [live demo link](/LaserPulseSimulator/).
 2.  **Select a Spectrum Mode**:
     * Choose **Gaussian S(ω)** and use the sliders to set the Central Frequency (`ω₀`) and Spectral Bandwidth (`Δω`).
     * Or, choose **Custom S(ω)** and drag the red dots on the top-left chart to define a custom spectrum shape.
