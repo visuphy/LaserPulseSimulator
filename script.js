@@ -1,21 +1,21 @@
 // script.js
 
-// --- DOM Elements --- (No changes)
+// --- DOM Elements --- (No changes from previous version)
 const sliders = {
     omega0: document.getElementById('omega0'),
     delta_omega: document.getElementById('delta_omega'),
     phi0: document.getElementById('phi0'),
     phi1: document.getElementById('phi1'),
-    phi2: document.getElementById('phi2'),
-    phi3: document.getElementById('phi3'),
+    phi2: document.getElementById('phi2'), // Corresponds to GDD
+    phi3: document.getElementById('phi3'), // Corresponds to TOD
 };
 const sliderVals = {
     omega0_val: document.getElementById('omega0_val'),
     delta_omega_val: document.getElementById('delta_omega_val'),
     phi0_val: document.getElementById('phi0_val'),
     phi1_val: document.getElementById('phi1_val'),
-    phi2_val: document.getElementById('phi2_val'),
-    phi3_val: document.getElementById('phi3_val'),
+    phi2_val: document.getElementById('phi2_val'), // GDD value
+    phi3_val: document.getElementById('phi3_val'), // TOD value
 };
 const canvasElements = {
     spectrumAndPhase: document.getElementById('spectrumChart'),
@@ -33,17 +33,18 @@ const gaussianControlsDiv = document.getElementById('gaussianControls');
 const resetCustomSpectrumButton = document.getElementById('resetCustomSpectrumButton');
 const autoOmega0CustomCheckbox = document.getElementById('autoOmega0Custom');
 const omega0SliderGroup = document.getElementById('omega0SliderGroup');
+const customSpectrumHelpText = document.getElementById('customSpectrumHelpText');
 
-// --- Chart Objects --- (No changes)
+// --- Chart Objects ---
 let charts = {};
 
-// --- Global State --- (No changes)
+// --- Global State ---
 let currentSpectrumMode = 'gaussian';
-let customSpectrumDataPoints = [];
+let customSpectrumDataPoints = []; // Stores {x: omega, y: S(omega) intensity}
 let isInitialSwitchToCustom = false;
 
-// --- Global Constants --- (No changes)
-const MIN_OMEGA_PHYSICAL = 0.01;
+// --- Global Constants ---
+const MIN_OMEGA_PHYSICAL = 0.01; // Minimum physical frequency to avoid issues at omega=0
 const NUM_T_POINTS = 401;
 const T_MIN = -20;
 const T_MAX = 20;
@@ -52,9 +53,9 @@ const WAVES_TO_ADD_PER_INCREMENT = 2;
 const NUM_DELTA_OMEGA_INCREMENTS = 10;
 const INDIVIDUAL_COS_Y_OFFSET = 2.5;
 const CUSTOM_SPECTRUM_POINT_DENSITY = 1.0;
-const INDIVIDUAL_COSINE_MIN_AMPLITUDE = 0.05;
+const INDIVIDUAL_COSINE_MIN_AMPLITUDE = 0.05; // This is a threshold for A_k = sqrt(S_k)
 
-// --- Helper function: linspace --- (No changes)
+// --- Helper function: linspace ---
 function linspace(start, end, num) {
     const arr = [];
     if (num <= 0) return arr;
@@ -86,7 +87,8 @@ function catmullRomInterpolate(p0, p1, p2, p3, t) {
 }
 
 // --- Calculation Functions ---
-function calculateSpectrumGaussian(omega, omega0, delta_omega_fwhm) { // No changes
+// Returns S(omega) - Spectral Intensity
+function calculateSpectrumGaussian(omega, omega0, delta_omega_fwhm) {
     if (omega < MIN_OMEGA_PHYSICAL && omega0 < MIN_OMEGA_PHYSICAL && delta_omega_fwhm < 1e-5) return 0;
     if (omega < 0) return 0;
     if (delta_omega_fwhm <= 1e-6) return (Math.abs(omega - omega0) < 1e-6 && omega >= 0) ? 1 : 0;
@@ -94,20 +96,16 @@ function calculateSpectrumGaussian(omega, omega0, delta_omega_fwhm) { // No chan
     const sigma_effective = delta_omega_fwhm / factor;
     if (sigma_effective < 1e-9) return (Math.abs(omega - omega0) < 1e-6 && omega >= 0) ? 1 : 0;
     const exponent = -0.5 * Math.pow((omega - omega0) / sigma_effective, 2);
-    return Math.exp(exponent);
+    return Math.exp(exponent); // This is S(omega)
 }
 
-// MODIFIED getCustomSpectrumValue to use Catmull-Rom
+// Returns S(omega) - Spectral Intensity from custom points
 function getCustomSpectrumValue(omega) {
     if (!customSpectrumDataPoints || customSpectrumDataPoints.length === 0) return 0;
-
     const n = customSpectrumDataPoints.length;
-
-    // Handle edge cases: omega outside the range of draggable points
     if (omega <= customSpectrumDataPoints[0].x) return Math.max(0, customSpectrumDataPoints[0].y);
     if (omega >= customSpectrumDataPoints[n - 1].x) return Math.max(0, customSpectrumDataPoints[n - 1].y);
 
-    // Find the segment where omega lies for interpolation
     let segmentIndex = -1;
     for (let i = 0; i < n - 1; i++) {
         if (omega >= customSpectrumDataPoints[i].x && omega <= customSpectrumDataPoints[i + 1].x) {
@@ -115,145 +113,108 @@ function getCustomSpectrumValue(omega) {
             break;
         }
     }
-
-    if (segmentIndex === -1) { // Should be caught by edge cases, but as a fallback
-        return Math.max(0, customSpectrumDataPoints[n - 1].y);
-    }
-
-    // For Catmull-Rom, we need 4 points: P0, P1, P2, P3
-    // P1 and P2 are the points defining the current segment.
-    // P0 is the point before P1, P3 is the point after P2.
+    if (segmentIndex === -1) return Math.max(0, customSpectrumDataPoints[n - 1].y);
 
     const p1 = customSpectrumDataPoints[segmentIndex];
     const p2 = customSpectrumDataPoints[segmentIndex + 1];
-
-    // Handle endpoints for P0 and P3 by extrapolating or duplicating
-    const p0 = (segmentIndex > 0) ? customSpectrumDataPoints[segmentIndex - 1] : {x: p1.x - (p2.x - p1.x), y: p1.y}; // Reflect or duplicate
-    const p3 = (segmentIndex < n - 2) ? customSpectrumDataPoints[segmentIndex + 2] : {x: p2.x + (p2.x - p1.x), y: p2.y}; // Reflect or duplicate
+    const p0 = (segmentIndex > 0) ? customSpectrumDataPoints[segmentIndex - 1] : {x: p1.x - (p2.x - p1.x), y: p1.y}; 
+    const p3 = (segmentIndex < n - 2) ? customSpectrumDataPoints[segmentIndex + 2] : {x: p2.x + (p2.x - p1.x), y: p2.y}; 
     
-    // Normalize omega (t) within the segment [P1.x, P2.x] to be [0, 1]
-    // Important: Catmull-Rom t is usually for parameteric curves. For f(x), t is (x - x1) / (x2 - x1)
-    let t;
-    if (Math.abs(p2.x - p1.x) < 1e-9) { // Points are identical in x
-        t = 0; // or 0.5 or 1, result should be p1.y or p2.y
-    } else {
-        t = (omega - p1.x) / (p2.x - p1.x);
-    }
-    t = Math.max(0, Math.min(1, t)); // Clamp t to [0, 1]
+    let t = (Math.abs(p2.x - p1.x) < 1e-9) ? 0 : (omega - p1.x) / (p2.x - p1.x);
+    t = Math.max(0, Math.min(1, t)); 
 
     const interpolatedY = catmullRomInterpolate(p0.y, p1.y, p2.y, p3.y, t);
-    return Math.max(0, Math.min(1.1, interpolatedY)); // Clamp to valid amplitude range (0 to chart max)
+    return Math.max(0, Math.min(1.1, interpolatedY)); // This is S(omega)
 }
 
-
+// Returns S(omega) - Spectral Intensity
 function calculateSpectrum(omega, omega0_gaussian_center, delta_omega_fwhm_gaussian) {
     return currentSpectrumMode === 'custom' ? getCustomSpectrumValue(omega) : calculateSpectrumGaussian(omega, omega0_gaussian_center, delta_omega_fwhm_gaussian);
 }
 
-function calculateSpectralPhase(omega, omega0_ref, c0, c1, c2, c3) { // No changes
+function calculateSpectralPhase(omega, omega0_ref, c0, c1, gdd_c2, tod_c3) {
     const dw = omega - omega0_ref;
-    return c0 + c1 * dw + c2 * Math.pow(dw, 2) + c3 * Math.pow(dw, 3);
+    return c0 + c1 * dw + 0.5 * gdd_c2 * Math.pow(dw, 2) + (1/6) * tod_c3 * Math.pow(dw, 3);
 }
 
-function calculateEffectiveCustomFWHMAndCenter() { // No changes to its internal logic
+// Calculates properties based on S(omega) - Spectral Intensity
+function calculateEffectiveCustomFWHMAndCenter() { 
     let sum_s = 0;
     let sum_os = 0;
     let sum_o2s = 0;
-
-    // Use a denser sampling of the *smooth* custom spectrum for centroid calculation
-    const numSamplesForCentroid = 100; // More samples for better accuracy
+    const numSamplesForCentroid = 100; 
     const step = (OMEGA_AXIS_MAX_DEFAULT - OMEGA_AXIS_MIN_DEFAULT) / (numSamplesForCentroid -1);
     let prevOmega = OMEGA_AXIS_MIN_DEFAULT;
-    let prevY = getCustomSpectrumValue(prevOmega); // Use smooth value
+    let prevY = getCustomSpectrumValue(prevOmega); // S(omega)
 
     for (let i = 1; i < numSamplesForCentroid; i++) {
         const currentOmega = OMEGA_AXIS_MIN_DEFAULT + i * step;
-        const currentY = getCustomSpectrumValue(currentOmega); // Use smooth value
-        
+        const currentY = getCustomSpectrumValue(currentOmega); // S(omega)
         const dx = currentOmega - prevOmega;
         const avg_y = (prevY + currentY) / 2;
         const avg_x = (prevOmega + currentOmega) / 2;
-
         sum_s += avg_y * dx;
         sum_os += avg_x * avg_y * dx;
         sum_o2s += avg_x * avg_x * avg_y * dx;
-
         prevOmega = currentOmega;
         prevY = currentY;
     }
     
-    let centroid = parseFloat(sliders.omega0.value);
+    let centroid = parseFloat(sliders.omega0.value); // Initial guess from slider
     if (sum_s > 1e-6) {
         centroid = sum_os / sum_s;
-    } else if (customSpectrumDataPoints.length > 0) { // Fallback if spectrum is all zero
+    } else if (customSpectrumDataPoints.length > 0) { 
         let minX = Infinity, maxX = -Infinity, count = 0;
-        customSpectrumDataPoints.forEach(p => {
-            if (p.y > 1e-6) { // Consider points that were originally non-zero
+        customSpectrumDataPoints.forEach(p => { // p.y is S(omega)
+            if (p.y > 1e-6) { 
                 minX = Math.min(minX, p.x);
                 maxX = Math.max(maxX, p.x);
                 count++;
             }
         });
         if (count > 0) centroid = (minX + maxX) / 2;
-        else if (customSpectrumDataPoints.length > 0) centroid = customSpectrumDataPoints[Math.floor(customSpectrumDataPoints.length / 2)].x; // Geometric center of all points
+        else if (customSpectrumDataPoints.length > 0) centroid = customSpectrumDataPoints[Math.floor(customSpectrumDataPoints.length / 2)].x; 
     }
-
 
     let s_max = 0;
-    // Find s_max from the smooth curve
     for (let i=0; i < omegaPlotArray.length; i++) {
-        const yVal = getCustomSpectrumValue(omegaPlotArray[i]);
+        const yVal = getCustomSpectrumValue(omegaPlotArray[i]); // S(omega)
         if (yVal > s_max) s_max = yVal;
     }
-
 
     if (s_max < 1e-3) return { center: centroid, fwhm: parseFloat(sliders.delta_omega.min) };
 
     const halfMax = s_max / 2;
     let omega1 = -1, omega2 = -1;
 
-    // Find FWHM points on the smooth curve
-    // Scan from left for omega1
     for (let i = 0; i < omegaPlotArray.length - 1; i++) {
         const x1 = omegaPlotArray[i];
-        const y1 = getCustomSpectrumValue(x1);
+        const y1 = getCustomSpectrumValue(x1); // S(omega)
         const x2 = omegaPlotArray[i+1];
-        const y2 = getCustomSpectrumValue(x2);
-
+        const y2 = getCustomSpectrumValue(x2); // S(omega)
         if ((y1 >= halfMax && y2 < halfMax) || (y1 < halfMax && y2 >= halfMax)) {
-            if (Math.abs(y2 - y1) > 1e-6) {
-                omega1 = x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1);
-            } else {
-                omega1 = (x1 + x2) / 2;
-            }
+            omega1 = (Math.abs(y2 - y1) > 1e-6) ? (x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1)) : ((x1 + x2) / 2);
             break;
         }
     }
      if (omega1 === -1 && getCustomSpectrumValue(omegaPlotArray[0]) >= halfMax) omega1 = omegaPlotArray[0];
 
-
-    // Scan from right for omega2
     for (let i = omegaPlotArray.length - 1; i > 0; i--) {
         const x1 = omegaPlotArray[i-1];
-        const y1 = getCustomSpectrumValue(x1);
+        const y1 = getCustomSpectrumValue(x1); // S(omega)
         const x2 = omegaPlotArray[i];
-        const y2 = getCustomSpectrumValue(x2);
+        const y2 = getCustomSpectrumValue(x2); // S(omega)
         if ((y1 < halfMax && y2 >= halfMax) || (y1 >= halfMax && y2 < halfMax)) {
-            if (Math.abs(y2 - y1) > 1e-6) {
-                omega2 = x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1);
-            } else {
-                omega2 = (x1+x2)/2;
-            }
+            omega2 = (Math.abs(y2 - y1) > 1e-6) ? (x1 + (halfMax - y1) * (x2 - x1) / (y2 - y1)) : ((x1+x2)/2);
             break;
         }
     }
     if (omega2 === -1 && getCustomSpectrumValue(omegaPlotArray[omegaPlotArray.length-1]) >= halfMax) omega2 = omegaPlotArray[omegaPlotArray.length-1];
 
-
     let fwhm;
     if (omega1 !== -1 && omega2 !== -1 && omega2 > omega1) {
         fwhm = Math.max(0.01, omega2 - omega1);
-    } else if (sum_s > 1e-6) {
+    } else if (sum_s > 1e-6) { // Fallback to standard deviation if FWHM points not found
         const variance = (sum_o2s / sum_s) - Math.pow(centroid, 2);
         fwhm = (variance > 0) ? Math.max(0.01, 2.355 * Math.sqrt(variance)) : parseFloat(sliders.delta_omega.min);
     } else {
@@ -264,101 +225,162 @@ function calculateEffectiveCustomFWHMAndCenter() { // No changes to its internal
 
 // --- Update and Plotting Logic ---
 function updatePlots() {
-    let omega0_slider_val_manual = parseFloat(sliders.omega0.value);
-    let delta_omega_fwhm_gaussian = parseFloat(sliders.delta_omega.value);
+    // 1. Read current slider values as inputs
+    let omega0_input = parseFloat(sliders.omega0.value);
+    let delta_omega_input = parseFloat(sliders.delta_omega.value);
 
-    if (omega0_slider_val_manual < MIN_OMEGA_PHYSICAL) { 
-        omega0_slider_val_manual = MIN_OMEGA_PHYSICAL; 
-    } else if (omega0_slider_val_manual > parseFloat(sliders.omega0.max)) {
-        omega0_slider_val_manual = parseFloat(sliders.omega0.max);
+    // 2. Determine actual_delta_omega to use (clamped to its own slider limits)
+    let actual_delta_omega = Math.max(parseFloat(sliders.delta_omega.min), Math.min(parseFloat(sliders.delta_omega.max), delta_omega_input));
+    // Update UI for delta_omega if it was clamped
+    if (Math.abs(actual_delta_omega - delta_omega_input) > 1e-5) {
+        sliders.delta_omega.value = actual_delta_omega;
     }
+    sliderVals.delta_omega_val.value = actual_delta_omega.toFixed(1);
 
-    let max_delta_omega_fwhm_allowed = 2 * (omega0_slider_val_manual - MIN_OMEGA_PHYSICAL);
-    if (max_delta_omega_fwhm_allowed < 0) max_delta_omega_fwhm_allowed = 0;
-    if (delta_omega_fwhm_gaussian > max_delta_omega_fwhm_allowed) { delta_omega_fwhm_gaussian = max_delta_omega_fwhm_allowed; sliders.delta_omega.value = delta_omega_fwhm_gaussian; }
-    if (delta_omega_fwhm_gaussian < parseFloat(sliders.delta_omega.min)) { delta_omega_fwhm_gaussian = parseFloat(sliders.delta_omega.min); sliders.delta_omega.value = delta_omega_fwhm_gaussian; }
-    if (delta_omega_fwhm_gaussian < 0) { delta_omega_fwhm_gaussian = 0; sliders.delta_omega.value = delta_omega_fwhm_gaussian; }
 
-    let omega0_phase_reference;
-    let omega0_effective_center;
-    let delta_omega_effective_fwhm;
+    // 3. Determine initial actual_omega0 (clamped to its own slider limits and ensure >= MIN_OMEGA_PHYSICAL)
+    let actual_omega0 = Math.max(parseFloat(sliders.omega0.min), omega0_input); // Clamp to slider min
+    actual_omega0 = Math.min(parseFloat(sliders.omega0.max), actual_omega0);   // Clamp to slider max
+    actual_omega0 = Math.max(MIN_OMEGA_PHYSICAL, actual_omega0);             // Ensure at least MIN_OMEGA_PHYSICAL
 
-    const customParams = calculateEffectiveCustomFWHMAndCenter();
+    // 4. Apply physical constraint for manual omega0 control (Gaussian mode, or Custom mode with auto-omega0 unchecked)
+    //    Constraint: omega0 >= MIN_OMEGA_PHYSICAL + actual_delta_omega / 2
+    //    This prevents the Gaussian spectrum's lower edge (omega0 - delta_omega/2) from being < MIN_OMEGA_PHYSICAL.
+    if (currentSpectrumMode === 'gaussian' || (currentSpectrumMode === 'custom' && !autoOmega0CustomCheckbox.checked)) {
+        const min_omega0_physically_allowed = MIN_OMEGA_PHYSICAL + (actual_delta_omega / 2.0);
+        if (actual_omega0 < min_omega0_physically_allowed) {
+            actual_omega0 = min_omega0_physically_allowed;
+        }
+        // Re-clamp against its own max in case the physical constraint pushed it too high
+        actual_omega0 = Math.min(parseFloat(sliders.omega0.max), actual_omega0);
+
+        // Update omega0 slider UI if it was changed from the raw input due to any clamping and is manually controlled
+        if (Math.abs(actual_omega0 - omega0_input) > 1e-5) {
+            sliders.omega0.value = actual_omega0;
+        }
+    }
+    // Note: sliderVals.omega0_val.value will be updated later based on omega0_phase_reference or actual_omega0 for manual custom.
+
+    // 5. Determine omega0_phase_reference, omega0_effective_center, delta_omega_effective_fwhm
+    let omega0_phase_reference;        // Center frequency for phase expansion
+    let omega0_effective_center;       // Calculated center of the S(omega) distribution
+    let delta_omega_effective_fwhm;    // Calculated FWHM of the S(omega) distribution
+
+    const customParams = calculateEffectiveCustomFWHMAndCenter(); // Calculates based on customSpectrumDataPoints
 
     if (currentSpectrumMode === 'custom') {
         omega0_effective_center = customParams.center;
         delta_omega_effective_fwhm = customParams.fwhm;
         if (autoOmega0CustomCheckbox.checked) {
-            omega0_phase_reference = customParams.center;
+            omega0_phase_reference = omega0_effective_center;
+            // Update the omega0 slider display to reflect the auto-calculated value
             sliders.omega0.value = omega0_phase_reference.toFixed(1); 
             sliderVals.omega0_val.value = omega0_phase_reference.toFixed(1);
         } else {
-            omega0_phase_reference = omega0_slider_val_manual;
+            // Manual control of omega0 in custom mode: use the fully clamped actual_omega0
+            omega0_phase_reference = actual_omega0;
+            sliderVals.omega0_val.value = actual_omega0.toFixed(1); // Update display for manual value
         }
-    } else {
-        omega0_phase_reference = omega0_slider_val_manual;
-        omega0_effective_center = omega0_slider_val_manual;
-        delta_omega_effective_fwhm = delta_omega_fwhm_gaussian;
-    }
-     if (omega0_phase_reference < MIN_OMEGA_PHYSICAL) omega0_phase_reference = MIN_OMEGA_PHYSICAL;
-
-
-    const phi0_coeff = parseFloat(sliders.phi0.value), phi1_coeff = parseFloat(sliders.phi1.value), phi2_coeff = parseFloat(sliders.phi2.value), phi3_coeff = parseFloat(sliders.phi3.value);
-    const showPeakConnector = showPeakConnectorCheckbox.checked, showSpectralPhase = showSpectralPhaseCheckbox.checked, showEnvE = showEnvelopeECheckbox.checked, showEnvI = showEnvelopeICheckbox.checked;
-
-    sliderVals.omega0_val.value = omega0_phase_reference.toFixed(1);
-    if (currentSpectrumMode === 'custom' && autoOmega0CustomCheckbox.checked) {
-        sliders.omega0.value = omega0_phase_reference;
+    } else { // Gaussian mode
+        omega0_phase_reference = actual_omega0;
+        omega0_effective_center = actual_omega0; // For Gaussian, S(omega) center is omega0_phase_reference
+        delta_omega_effective_fwhm = actual_delta_omega; // For Gaussian, S(omega) FWHM is actual_delta_omega
+        sliderVals.omega0_val.value = actual_omega0.toFixed(1); // Update display
     }
 
-    sliderVals.delta_omega_val.value = delta_omega_fwhm_gaussian.toFixed(1);
-    sliderVals.phi0_val.value = phi0_coeff.toFixed(2); sliderVals.phi1_val.value = phi1_coeff.toFixed(2); sliderVals.phi2_val.value = phi2_coeff.toFixed(2); sliderVals.phi3_val.value = phi3_coeff.toFixed(2);
+    // Final safety clamp for omega0_phase_reference (should ideally not be needed if logic above is correct)
+    if (omega0_phase_reference < MIN_OMEGA_PHYSICAL) {
+        omega0_phase_reference = MIN_OMEGA_PHYSICAL;
+        // If this occurs, update the relevant UI elements if they were based on the old value
+        if (currentSpectrumMode === 'gaussian' || (currentSpectrumMode === 'custom' && !autoOmega0CustomCheckbox.checked)) {
+            sliderVals.omega0_val.value = omega0_phase_reference.toFixed(1);
+            if (sliders.omega0.value !== omega0_phase_reference.toFixed(1)) { // Avoid redundant updates if possible
+                 sliders.omega0.value = omega0_phase_reference.toFixed(1);
+            }
+        } else if (currentSpectrumMode === 'custom' && autoOmega0CustomCheckbox.checked) {
+            // This case means auto-calculated omega0 was too low, which is less likely but possible if spectrum is very narrow and near 0.
+            sliders.omega0.value = omega0_phase_reference.toFixed(1);
+            sliderVals.omega0_val.value = omega0_phase_reference.toFixed(1);
+        }
+    }
 
-    const spectrumData = omegaPlotArray.map(om => ({ x: om, y: calculateSpectrum(om, omega0_phase_reference, delta_omega_fwhm_gaussian) }));
-    const phaseData = omegaPlotArray.map(om => ({ x: om, y: calculateSpectralPhase(om, omega0_phase_reference, phi0_coeff, phi1_coeff, phi2_coeff, phi3_coeff) }));
+    // Coefficients for phase calculation
+    const phi0_coeff = parseFloat(sliders.phi0.value);
+    const phi1_coeff = parseFloat(sliders.phi1.value);
+    const gdd_coeff = parseFloat(sliders.phi2.value);
+    const tod_coeff = parseFloat(sliders.phi3.value);
+    // Update their display values
+    sliderVals.phi0_val.value = phi0_coeff.toFixed(2);
+    sliderVals.phi1_val.value = phi1_coeff.toFixed(2);
+    sliderVals.phi2_val.value = gdd_coeff.toFixed(2);
+    sliderVals.phi3_val.value = tod_coeff.toFixed(2);
 
-    const deltaOmegaSliderMin = parseFloat(sliders.delta_omega.min);
-    const deltaOmegaSliderMax = parseFloat(sliders.delta_omega.max);
+    // Checkboxes
+    const showPeakConnector = showPeakConnectorCheckbox.checked;
+    const showSpectralPhase = showSpectralPhaseCheckbox.checked;
+    const showEnvE = showEnvelopeECheckbox.checked;
+    const showEnvI = showEnvelopeICheckbox.checked;
+
+    // --- Spectrum and Phase Data Calculation ---
+    // For Gaussian spectrum, use omega0_phase_reference as its center and actual_delta_omega as its FWHM.
+    // For Custom spectrum, calculateSpectrum calls getCustomSpectrumValue which uses its own points.
+    const spectrumData = omegaPlotArray.map(om => ({ x: om, y: calculateSpectrum(om, omega0_phase_reference, actual_delta_omega) }));
+    const phaseData = omegaPlotArray.map(om => ({ x: om, y: calculateSpectralPhase(om, omega0_phase_reference, phi0_coeff, phi1_coeff, gdd_coeff, tod_coeff) }));
+
+    // --- Individual Cosine Waves Calculation ---
+    // Determine number of cosine waves for plotting based on delta_omega_effective_fwhm
+    const deltaOmegaSliderMin = parseFloat(sliders.delta_omega.min); // Use actual min of slider range
+    const deltaOmegaSliderMax = parseFloat(sliders.delta_omega.max); // Use actual max of slider range
     const deltaOmegaSliderRange = deltaOmegaSliderMax - deltaOmegaSliderMin;
     let numCosWavesBaseSampling;
-    if (deltaOmegaSliderRange <= 1e-6) {
+    if (deltaOmegaSliderRange <= 1e-6) { // Avoid division by zero if range is tiny
         numCosWavesBaseSampling = BASE_NUM_COS_WAVES;
     } else {
-        const fwhmForProportion = delta_omega_effective_fwhm;
+        // Use delta_omega_effective_fwhm (which is actual_delta_omega for Gaussian, or customParams.fwhm for custom)
+        const fwhmForProportion = delta_omega_effective_fwhm; 
         const fractionOfRange = (fwhmForProportion - deltaOmegaSliderMin) / deltaOmegaSliderRange;
         const normalizedFraction = Math.max(0, Math.min(1, fractionOfRange));
         const currentIncrement = Math.floor(normalizedFraction * NUM_DELTA_OMEGA_INCREMENTS);
-        const effectiveIncrement = Math.min(currentIncrement, NUM_DELTA_OMEGA_INCREMENTS - (NUM_DELTA_OMEGA_INCREMENTS > 0 ? 1 : 0));
+        // Ensure effectiveIncrement doesn't exceed max increments
+        const effectiveIncrement = Math.min(currentIncrement, NUM_DELTA_OMEGA_INCREMENTS > 0 ? NUM_DELTA_OMEGA_INCREMENTS -1 : 0);
         numCosWavesBaseSampling = BASE_NUM_COS_WAVES + (effectiveIncrement * WAVES_TO_ADD_PER_INCREMENT);
     }
     if (numCosWavesBaseSampling < 0) numCosWavesBaseSampling = 0;
 
+
     const individualCosinesDatasets = [];
     const sumCosinesDataY = new Array(NUM_T_POINTS).fill(0);
-    const sumSinesDataY = new Array(NUM_T_POINTS).fill(0);
-    let cosineOmegaValuesToPlot = [];
+    const sumSinesDataY = new Array(NUM_T_POINTS).fill(0); 
+    let cosineOmegaValuesToPlot = []; // Stores {omega, amplitude: A_k = sqrt(S_k)}
 
     if (currentSpectrumMode === 'custom') {
-        for (let om_k = OMEGA_AXIS_MIN_DEFAULT; om_k <= OMEGA_AXIS_MAX_DEFAULT + 1e-9; om_k += 0.5) {
-            if (Math.abs(om_k) < 1e-9) {
-                const A_k_zero = getCustomSpectrumValue(0); // Uses smooth interpolation
-                if (A_k_zero >= INDIVIDUAL_COSINE_MIN_AMPLITUDE) {
-                    cosineOmegaValuesToPlot.push({ omega: 0, amplitude: A_k_zero });
+        // Sample custom spectrum for individual cosines
+        // The density of sampling here can be adjusted if needed. Using a fixed step.
+        for (let om_k = OMEGA_AXIS_MIN_DEFAULT; om_k <= OMEGA_AXIS_MAX_DEFAULT + 1e-9; om_k += 0.5) { 
+            const S_k = getCustomSpectrumValue(om_k); 
+            const A_k = Math.sqrt(Math.max(0, S_k));  
+            if (Math.abs(om_k) < 1e-9) { // Handle DC component
+                if (A_k >= INDIVIDUAL_COSINE_MIN_AMPLITUDE) {
+                    cosineOmegaValuesToPlot.push({ omega: 0, amplitude: A_k });
                 }
                 continue;
             }
-            if (om_k < MIN_OMEGA_PHYSICAL) continue;
-            const A_k = getCustomSpectrumValue(om_k); // Uses smooth interpolation
+            if (om_k < MIN_OMEGA_PHYSICAL) continue; // Skip non-physical frequencies
             if (A_k >= INDIVIDUAL_COSINE_MIN_AMPLITUDE) {
                 cosineOmegaValuesToPlot.push({ omega: om_k, amplitude: A_k });
             }
         }
-    } else {
+    } else { // Gaussian mode
+        // Determine sampling range for Gaussian individual cosines based on effective center and FWHM
         let omega_sampling_min_gauss = omega0_effective_center - delta_omega_effective_fwhm / 2;
         let omega_sampling_max_gauss = omega0_effective_center + delta_omega_effective_fwhm / 2;
-        if (omega_sampling_min_gauss < MIN_OMEGA_PHYSICAL) { omega_sampling_min_gauss = MIN_OMEGA_PHYSICAL; if (omega_sampling_max_gauss < omega_sampling_min_gauss) omega_sampling_max_gauss = omega_sampling_min_gauss; }
-        if (omega_sampling_max_gauss <= omega_sampling_min_gauss) {
-            if (delta_omega_effective_fwhm < 1e-5) {
+        
+        if (omega_sampling_min_gauss < MIN_OMEGA_PHYSICAL) { 
+            omega_sampling_min_gauss = MIN_OMEGA_PHYSICAL; 
+            if (omega_sampling_max_gauss < omega_sampling_min_gauss) omega_sampling_max_gauss = omega_sampling_min_gauss; // Ensure max >= min
+        }
+        if (omega_sampling_max_gauss <= omega_sampling_min_gauss) { // Handle very narrow or zero FWHM
+            if (delta_omega_effective_fwhm < 1e-5) { 
                 omega_sampling_min_gauss = Math.max(MIN_OMEGA_PHYSICAL, omega0_effective_center - 0.1);
                 omega_sampling_max_gauss = omega0_effective_center + 0.1;
             } else {
@@ -379,10 +401,13 @@ function updatePlots() {
         } else {
             tempGaussianOmegas = linspace(omega_sampling_min_gauss, omega_sampling_max_gauss, numCosWavesBaseSampling);
         }
+
         tempGaussianOmegas.forEach(om_k => {
-            if (om_k >= MIN_OMEGA_PHYSICAL || Math.abs(om_k) < 1e-9) {
-                const A_k = calculateSpectrumGaussian(om_k, omega0_phase_reference, delta_omega_fwhm_gaussian);
-                if (A_k > 1e-5) {
+            if (om_k >= MIN_OMEGA_PHYSICAL || Math.abs(om_k) < 1e-9) { 
+                // For Gaussian, S_k is calculated using omega0_phase_reference and actual_delta_omega
+                const S_k = calculateSpectrumGaussian(om_k, omega0_phase_reference, actual_delta_omega); 
+                const A_k = Math.sqrt(Math.max(0, S_k)); 
+                if (A_k >= INDIVIDUAL_COSINE_MIN_AMPLITUDE) { 
                     cosineOmegaValuesToPlot.push({ omega: om_k, amplitude: A_k });
                 }
             }
@@ -394,28 +419,25 @@ function updatePlots() {
 
     for (let i = 0; i < cosineOmegaValuesToPlot.length; i++) {
         const om_k = cosineOmegaValuesToPlot[i].omega;
-        const A_k = cosineOmegaValuesToPlot[i].amplitude;
-        const phi_k = calculateSpectralPhase(om_k, omega0_phase_reference, phi0_coeff, phi1_coeff, phi2_coeff, phi3_coeff);
+        const A_k = cosineOmegaValuesToPlot[i].amplitude; 
+        const phi_k = calculateSpectralPhase(om_k, omega0_phase_reference, phi0_coeff, phi1_coeff, gdd_coeff, tod_coeff);
 
         timeArray.forEach((t, t_idx) => {
-            // MODIFICATION: Changed argument for cosine and sine to match common optics convention
             const arg = phi_k - om_k * t; 
-            sumCosinesDataY[t_idx] += A_k * Math.cos(arg);
-            sumSinesDataY[t_idx] += A_k * Math.sin(arg); // Envelope calculation should use the same argument for consistency
+            sumCosinesDataY[t_idx] += A_k * Math.cos(arg); 
+            sumSinesDataY[t_idx] += A_k * Math.sin(arg);  
         });
         
-        if (Math.abs(om_k) < 1e-9) continue; // Skip DC component for individual plotting if desired, or handle separately
+        if (Math.abs(om_k) < 1e-9) continue; 
 
         if (showPeakConnector) {
-            // MODIFICATION: Adjusted t_peak_k for the new convention
             let t_peak_k = (Math.abs(om_k) > 1e-6) ? phi_k / om_k : 0; 
             t_peak_k = Math.max(T_MIN, Math.min(T_MAX, t_peak_k));
-            peakConnectorData.push({ x: t_peak_k, y: A_k - plottedCosCount * INDIVIDUAL_COS_Y_OFFSET });
+            peakConnectorData.push({ x: t_peak_k, y: A_k - plottedCosCount * INDIVIDUAL_COS_Y_OFFSET }); 
         }
-        // MODIFICATION: Changed argument for individual cosine waves
         const waveYValues = timeArray.map(t => A_k * Math.cos(phi_k - om_k * t)); 
         individualCosinesDatasets.push({
-            label: `ω=${om_k.toFixed(2)}, A=${A_k.toFixed(2)}`,
+            label: `ω=${om_k.toFixed(2)}, A=${A_k.toFixed(2)}`, 
             data: timeArray.map((t, t_idx) => ({ x: t, y: waveYValues[t_idx] - plottedCosCount * INDIVIDUAL_COS_Y_OFFSET })),
             borderColor: `hsl(${(plottedCosCount * (360 / (Math.max(1, cosineOmegaValuesToPlot.filter(p => Math.abs(p.omega)>1e-9).length) ))) % 360}, 70%, 50%)`,
             borderWidth: 1, fill: false,
@@ -429,18 +451,17 @@ function updatePlots() {
 
     const sumCosinesData = timeArray.map((t, idx) => ({ x: t, y: sumCosinesDataY[idx] }));
     const sumIntensityData = timeArray.map((t, idx) => ({ x: t, y: Math.pow(sumCosinesDataY[idx], 2) }));
-    // Envelope calculation uses sumCosinesDataY and sumSinesDataY which are now based on the new 'arg'
     const envelopeEData = timeArray.map((t, idx) => ({ x: t, y: Math.sqrt(Math.pow(sumCosinesDataY[idx], 2) + Math.pow(sumSinesDataY[idx], 2)) }));
     const envelopeIData = envelopeEData.map(point => ({ x: point.x, y: Math.pow(point.y, 2) }));
 
-    charts.spectrumAndPhase.data.datasets[0].data = spectrumData;
+    charts.spectrumAndPhase.data.datasets[0].data = spectrumData; 
     charts.spectrumAndPhase.data.datasets[1].data = phaseData;
     charts.spectrumAndPhase.data.datasets[1].hidden = !showSpectralPhase;
-    charts.spectrumAndPhase.data.datasets[2].data = customSpectrumDataPoints;
+    charts.spectrumAndPhase.data.datasets[2].data = customSpectrumDataPoints; 
     charts.spectrumAndPhase.data.datasets[2].hidden = (currentSpectrumMode !== 'custom');
     charts.spectrumAndPhase.options.scales.x.min = OMEGA_AXIS_MIN_DEFAULT;
     charts.spectrumAndPhase.options.scales.x.max = OMEGA_AXIS_MAX_DEFAULT;
-    charts.spectrumAndPhase.update('none');
+    charts.spectrumAndPhase.update('none'); 
     charts.individualCosines.data.datasets = individualCosinesDatasets;
     charts.individualCosines.update('none');
     charts.sumCosines.data.datasets[0].data = sumCosinesData;
@@ -453,59 +474,61 @@ function updatePlots() {
     charts.sumIntensity.update('none');
 }
 
-// --- Custom Spectrum Point Management --- (No changes)
+// --- Custom Spectrum Point Management ---
 function initializeOrUpdateCustomSpectrumPoints(isInitialSwitch = false) {
     const previousCustomPoints = currentSpectrumMode === 'custom' ? [...customSpectrumDataPoints] : [];
-    customSpectrumDataPoints = [];
+    customSpectrumDataPoints = []; 
     const density = CUSTOM_SPECTRUM_POINT_DENSITY;
     if (density <= 0) return;
     const omegaStep = 1.0 / density;
     let currentOmega = OMEGA_AXIS_MIN_DEFAULT;
     let safetyCounter = 0;
     while (currentOmega <= OMEGA_AXIS_MAX_DEFAULT + 1e-9 && safetyCounter < 1000) {
-        let yVal = 0.5;
-        if (isInitialSwitch) {
+        let s_val = 0.5; 
+        if (isInitialSwitch) { 
             const omega0_gauss = parseFloat(sliders.omega0.value), delta_omega_gauss = parseFloat(sliders.delta_omega.value);
-            yVal = calculateSpectrumGaussian(currentOmega, omega0_gauss, delta_omega_gauss);
-        } else if (previousCustomPoints.length > 0) yVal = getCustomSpectrumValueInterpolate(currentOmega, previousCustomPoints); // This is linear for point re-init
-        customSpectrumDataPoints.push({ x: currentOmega, y: Math.max(0, Math.min(1.1, yVal)) });
+            s_val = calculateSpectrumGaussian(currentOmega, omega0_gauss, delta_omega_gauss); 
+        } else if (previousCustomPoints.length > 0) { 
+            s_val = getCustomSpectrumValueInterpolate(currentOmega, previousCustomPoints); 
+        }
+        customSpectrumDataPoints.push({ x: currentOmega, y: Math.max(0, Math.min(1.1, s_val)) }); 
         currentOmega += omegaStep; safetyCounter++;
     }
     if (customSpectrumDataPoints.length > 0 && Math.abs(customSpectrumDataPoints[customSpectrumDataPoints.length - 1].x - OMEGA_AXIS_MAX_DEFAULT) > 1e-3 && customSpectrumDataPoints[customSpectrumDataPoints.length - 1].x < OMEGA_AXIS_MAX_DEFAULT) {
-        let yVal = 0.5;
+        let s_val = 0.5;
         if (isInitialSwitch) {
             const omega0_gauss = parseFloat(sliders.omega0.value), delta_omega_gauss = parseFloat(sliders.delta_omega.value);
-            yVal = calculateSpectrumGaussian(OMEGA_AXIS_MAX_DEFAULT, omega0_gauss, delta_omega_gauss);
-        } else if (previousCustomPoints.length > 0) yVal = getCustomSpectrumValueInterpolate(OMEGA_AXIS_MAX_DEFAULT, previousCustomPoints); // Linear for point re-init
-        customSpectrumDataPoints.push({ x: OMEGA_AXIS_MAX_DEFAULT, y: Math.max(0, Math.min(1.1, yVal)) });
+            s_val = calculateSpectrumGaussian(OMEGA_AXIS_MAX_DEFAULT, omega0_gauss, delta_omega_gauss);
+        } else if (previousCustomPoints.length > 0) {
+             s_val = getCustomSpectrumValueInterpolate(OMEGA_AXIS_MAX_DEFAULT, previousCustomPoints);
+        }
+        customSpectrumDataPoints.push({ x: OMEGA_AXIS_MAX_DEFAULT, y: Math.max(0, Math.min(1.1, s_val)) });
     }
     customSpectrumDataPoints = customSpectrumDataPoints.filter(p => p.x <= OMEGA_AXIS_MAX_DEFAULT + 1e-9);
-    customSpectrumDataPoints = customSpectrumDataPoints.filter((point, index, self) => index === self.findIndex((p) => Math.abs(p.x - point.x) < 1e-9));
+    customSpectrumDataPoints = customSpectrumDataPoints.filter((point, index, self) => index === self.findIndex((p) => Math.abs(p.x - point.x) < 1e-9)); 
     customSpectrumDataPoints.sort((a, b) => a.x - b.x);
     if (charts.spectrumAndPhase) charts.spectrumAndPhase.data.datasets[2].data = customSpectrumDataPoints;
 }
 
-// This function is used when re-initializing points after density change (which is now fixed, so less critical)
-// It remains linear for simplicity in that specific context. The main getCustomSpectrumValue is now Catmull-Rom.
 function getCustomSpectrumValueInterpolate(omega, pointsArray) {
-    if (!pointsArray || pointsArray.length === 0) return 0.5;
+    if (!pointsArray || pointsArray.length === 0) return 0.5; 
     const firstPoint = pointsArray[0], lastPoint = pointsArray[pointsArray.length - 1];
     if (omega <= firstPoint.x) return Math.max(0, firstPoint.y);
     if (omega >= lastPoint.x) return Math.max(0, lastPoint.y);
     for (let i = 0; i < pointsArray.length - 1; i++) {
         const p1 = pointsArray[i], p2 = pointsArray[i + 1];
         if (omega >= p1.x && omega <= p2.x) {
-            if (Math.abs(p1.x - p2.x) < 1e-9) return Math.max(0, p1.y);
+            if (Math.abs(p1.x - p2.x) < 1e-9) return Math.max(0, p1.y); 
             const t = (omega - p1.x) / (p2.x - p1.x);
-            return Math.max(0, p1.y + t * (p2.y - p1.y));
+            return Math.max(0, p1.y + t * (p2.y - p1.y)); 
         }
     }
-    return Math.max(0, lastPoint.y);
+    return Math.max(0, lastPoint.y); 
 }
 
 
 // --- Chart Initialization ---
-function initCharts() { // MODIFIED: Removed tension from S(omega) dataset
+function initCharts() { 
     const AXIS_TITLE_FONT_SIZE = 13, TICK_LABEL_FONT_SIZE = 11, LEGEND_LABEL_FONT_SIZE = 12;
     const baseChartOptions = {
         animation: { duration: 0 }, responsive: true, maintainAspectRatio: false,
@@ -513,33 +536,33 @@ function initCharts() { // MODIFIED: Removed tension from S(omega) dataset
             x: { type: 'linear', position: 'bottom', title: { display: true, font: { size: AXIS_TITLE_FONT_SIZE } }, ticks: { font: { size: TICK_LABEL_FONT_SIZE } } },
             y: { title: { display: true, font: { size: AXIS_TITLE_FONT_SIZE } }, ticks: { font: { size: TICK_LABEL_FONT_SIZE } } }
         },
-        elements: { line: { tension: 0.0 }, point: { radius: 0 } }, // Default to no tension globally
+        elements: { line: { tension: 0.0 }, point: { radius: 0 } }, 
         plugins: { legend: { labels: { font: { size: LEGEND_LABEL_FONT_SIZE } } }, tooltip: { enabled: false } }
     };
 
     charts.spectrumAndPhase = new Chart(canvasElements.spectrumAndPhase.getContext('2d'), {
         type: 'line', data: {
             datasets: [
-                { label: 'S(ω)', data: [], borderColor: '#3498db', borderWidth: 2, fill: false, yAxisID: 'yS' /* tension: 0.4 REMOVED */ },
-                { label: 'Φ(ω)', data: [], borderColor: '#2ecc71', borderWidth: 2, fill: false, yAxisID: 'yPhi', tension: 0.1 }, // Phase can still have slight visual tension
-                { data: [], borderColor: '#e74c3c', backgroundColor: '#e74c3c', borderWidth: 1, fill: false, yAxisID: 'yS', showLine: false, pointRadius: 5, pointHoverRadius: 7, hidden: true, order: -1 }
+                { label: 'S(ω)', data: [], borderColor: '#3498db', borderWidth: 2, fill: false, yAxisID: 'yS' }, 
+                { label: 'Φ(ω)', data: [], borderColor: '#2ecc71', borderWidth: 2, fill: false, yAxisID: 'yPhi', tension: 0.1 }, 
+                { data: [], borderColor: '#e74c3c', backgroundColor: '#e74c3c', borderWidth: 1, fill: false, yAxisID: 'yS', showLine: false, pointRadius: 5, pointHoverRadius: 7, hidden: true, order: -1 } 
             ]
         }, options: {
             ...baseChartOptions,
             scales: {
                 x: { ...baseChartOptions.scales.x, min: OMEGA_AXIS_MIN_DEFAULT, max: OMEGA_AXIS_MAX_DEFAULT, title: { ...baseChartOptions.scales.x.title, text: 'ω (Frequency)' } },
-                yS: { type: 'linear', position: 'left', title: { display: true, text: 'Amplitude S(ω)', font: { size: AXIS_TITLE_FONT_SIZE } }, min: 0, max: 1.1, grid: { drawOnChartArea: true }, ticks: { font: { size: TICK_LABEL_FONT_SIZE } } },
+                yS: { type: 'linear', position: 'left', title: { display: true, text: 'Spectral Intensity S(ω)', font: { size: AXIS_TITLE_FONT_SIZE } }, min: 0, max: 1.1, grid: { drawOnChartArea: true }, ticks: { font: { size: TICK_LABEL_FONT_SIZE } } },
                 yPhi: { type: 'linear', position: 'right', title: { display: true, text: 'Phase Φ(ω) (rad)', font: { size: AXIS_TITLE_FONT_SIZE } }, grid: { drawOnChartArea: false }, ticks: { font: { size: TICK_LABEL_FONT_SIZE } } }
             },
-            plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: null, labels: { ...baseChartOptions.plugins.legend.labels, filter: function(legendItem) { return legendItem.datasetIndex !== 2; } } } }
+            plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: null, labels: { ...baseChartOptions.plugins.legend.labels, filter: function(legendItem) { return legendItem.datasetIndex !== 2; } } } } 
         }
     });
-    charts.individualCosines = new Chart(canvasElements.individualCosines.getContext('2d'), { type: 'line', data: { datasets: [] }, options: { ...baseChartOptions, elements: {...baseChartOptions.elements, line: {tension: 0.1}}, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, display: true, position: 'top', onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Amplitude (Offset)' } } } } });
+    charts.individualCosines = new Chart(canvasElements.individualCosines.getContext('2d'), { type: 'line', data: { datasets: [] }, options: { ...baseChartOptions, elements: {...baseChartOptions.elements, line: {tension: 0.1}}, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, display: true, position: 'top', onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Amplitude A(ω) (Offset)' } } } } }); 
     charts.sumCosines = new Chart(canvasElements.sumCosines.getContext('2d'), { type: 'line', data: { datasets: [{ label: 'Summed Pulse E(t)', data: [], borderColor: '#e74c3c', borderWidth: 2, fill: false, tension: 0.1 }, { label: 'E(t) Envelope', data: [], borderColor: '#f1a7a0', borderWidth: 1.5, borderDash: [5, 5], fill: false, tension: 0.1 }] }, options: { ...baseChartOptions, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Amplitude E(t)' } } } } });
     charts.sumIntensity = new Chart(canvasElements.sumIntensity.getContext('2d'), { type: 'line', data: { datasets: [{ label: 'Intensity I(t)', data: [], borderColor: '#9b59b6', borderWidth: 2, fill: false, tension: 0.1 }, { label: 'I(t) Envelope', data: [], borderColor: '#cda5d8', borderWidth: 1.5, borderDash: [5, 5], fill: false, tension: 0.1 }] }, options: { ...baseChartOptions, plugins: { ...baseChartOptions.plugins, legend: { ...baseChartOptions.plugins.legend, onClick: Chart.defaults.plugins.legend.onClick } }, scales: { x: { ...baseChartOptions.scales.x, title: { ...baseChartOptions.scales.x.title, text: 't (Time)' } }, y: { ...baseChartOptions.scales.y, title: { ...baseChartOptions.scales.y.title, text: 'Intensity I(t) (a.u.)' }, min: 0 } } } } )};
 
 
-// --- UI Control Logic --- (No changes)
+// --- UI Control Logic ---
 function updateOmega0ControlsCustomMode() {
     const isCustom = currentSpectrumMode === 'custom';
     const isAuto = autoOmega0CustomCheckbox.checked;
@@ -549,7 +572,7 @@ function updateOmega0ControlsCustomMode() {
     if (isCustom && isAuto) {
         sliders.omega0.disabled = true;
         sliderVals.omega0_val.disabled = true;
-        omega0SliderGroup.classList.add('disabled-look');
+        omega0SliderGroup.classList.add('disabled-look'); 
     } else {
         sliders.omega0.disabled = false;
         sliderVals.omega0_val.disabled = false;
@@ -558,13 +581,11 @@ function updateOmega0ControlsCustomMode() {
     document.getElementById('omega0_custom_note').style.display = isCustom ? 'block' : 'none';
 }
 
-// --- Event Listeners --- (No changes)
+// --- Event Listeners ---
 for (const key in sliders) {
     if (sliders.hasOwnProperty(key) && sliders[key]) {
         sliders[key].addEventListener('input', () => {
-            if (key === 'omega0' && currentSpectrumMode === 'custom' && !autoOmega0CustomCheckbox.checked) {
-                 sliderVals.omega0_val.value = sliders.omega0.value;
-            }
+            // No need to manually sync omega0_val here if updatePlots handles it correctly
             updatePlots();
         });
     }
@@ -572,12 +593,17 @@ for (const key in sliders) {
 function setupNumberInputListener(sliderKey, precision) {
     const numberInput = sliderVals[sliderKey + "_val"], rangeSlider = sliders[sliderKey];
     if (!numberInput || !rangeSlider) return;
-    numberInput.addEventListener('change', () => {
+    numberInput.addEventListener('change', () => { // 'change' event is better for number inputs than 'input'
         let value = parseFloat(numberInput.value);
         const min = parseFloat(rangeSlider.min), max = parseFloat(rangeSlider.max);
-        if (isNaN(value)) value = parseFloat(rangeSlider.value); else value = Math.max(min, Math.min(max, value));
-        rangeSlider.value = value;
-        updatePlots();
+        if (isNaN(value)) { // If input is not a number, revert to slider's current value
+            value = parseFloat(rangeSlider.value);
+        } else { // Clamp value to slider's min/max
+            value = Math.max(min, Math.min(max, value));
+        }
+        rangeSlider.value = value; // Sync slider with number input
+        numberInput.value = value.toFixed(precision); // Update number input to reflect clamped/parsed value
+        updatePlots(); // Update plots after number input change
     });
 }
 showPeakConnectorCheckbox.addEventListener('change', updatePlots);
@@ -598,14 +624,14 @@ gaussianModeRadio.addEventListener('change', () => {
 });
 customModeRadio.addEventListener('change', () => {
     if (customModeRadio.checked) {
-        isInitialSwitchToCustom = (currentSpectrumMode !== 'custom');
+        isInitialSwitchToCustom = (currentSpectrumMode !== 'custom'); 
         currentSpectrumMode = 'custom';
         gaussianControlsDiv.style.display = 'none';
         resetCustomSpectrumButton.style.display = 'block';
         customSpectrumHelpText.style.display = 'block';
         initializeOrUpdateCustomSpectrumPoints(isInitialSwitchToCustom);
         if (charts.spectrumAndPhase) charts.spectrumAndPhase.data.datasets[2].hidden = false;
-        isInitialSwitchToCustom = false;
+        isInitialSwitchToCustom = false; 
         updateOmega0ControlsCustomMode();
         updatePlots();
     }
@@ -616,21 +642,21 @@ autoOmega0CustomCheckbox.addEventListener('change', () => {
 });
 resetCustomSpectrumButton.addEventListener('click', () => {
     if (currentSpectrumMode === 'custom') {
-        customSpectrumDataPoints.forEach(point => { point.y = 0.0; });
+        customSpectrumDataPoints.forEach(point => { point.y = 0.0; }); 
         updatePlots();
     }
 });
 let draggedPointIndex = -1;
 let isDragging = false;
-let dragStartYPixelOffset = 0;
+let dragStartYPixelOffset = 0; 
 canvasElements.spectrumAndPhase.addEventListener('mousedown', (evt) => {
     if (currentSpectrumMode !== 'custom' || !charts.spectrumAndPhase) return;
     const chart = charts.spectrumAndPhase;
-    const xScale = chart.scales.x, yScale = chart.scales.yS;
+    const xScale = chart.scales.x, yScale = chart.scales.yS; 
     const rect = canvasElements.spectrumAndPhase.getBoundingClientRect();
     const xPixel = evt.clientX - rect.left, yPixel = evt.clientY - rect.top;
     let newDraggedPointIndex = -1, minHorizontalPixelDiff = Infinity;
-    const xClickPixelTolerance = 15;
+    const xClickPixelTolerance = 15; 
     customSpectrumDataPoints.forEach((point, index) => {
         const pointXPixel = xScale.getPixelForValue(point.x);
         const horizontalPixelDiff = Math.abs(xPixel - pointXPixel);
@@ -639,12 +665,13 @@ canvasElements.spectrumAndPhase.addEventListener('mousedown', (evt) => {
         }
     });
     if (newDraggedPointIndex !== -1) {
-        if (Math.abs(customSpectrumDataPoints[newDraggedPointIndex].x) < 1e-9) return;
+        // Allow dragging DC component if it exists, but its x is fixed.
+        // if (Math.abs(customSpectrumDataPoints[newDraggedPointIndex].x) < 1e-9) return; 
         draggedPointIndex = newDraggedPointIndex; isDragging = true;
         chart.options.animation = false; canvasElements.spectrumAndPhase.style.cursor = 'grabbing';
-        const draggedPointYValue = customSpectrumDataPoints[draggedPointIndex].y;
+        const draggedPointYValue = customSpectrumDataPoints[draggedPointIndex].y; 
         const draggedPointYPixel = yScale.getPixelForValue(draggedPointYValue);
-        dragStartYPixelOffset = yPixel - draggedPointYPixel;
+        dragStartYPixelOffset = yPixel - draggedPointYPixel; 
     }
 });
 canvasElements.spectrumAndPhase.addEventListener('mousemove', (evt) => {
@@ -654,53 +681,59 @@ canvasElements.spectrumAndPhase.addEventListener('mousemove', (evt) => {
     if (isDragging && draggedPointIndex !== -1) {
         const rect = canvasElements.spectrumAndPhase.getBoundingClientRect();
         const currentMouseYPixel = evt.clientY - rect.top;
-        const yScale = chart.scales.yS;
-        const targetPointYPixel = currentMouseYPixel - dragStartYPixelOffset;
-        let newYValue = yScale.getValueForPixel(targetPointYPixel);
-        newYValue = Math.max(yScale.min, Math.min(yScale.max, newYValue));
-        customSpectrumDataPoints[draggedPointIndex].y = newYValue;
-        const spectrumDataLine = omegaPlotArray.map(om => ({ x: om, y: getCustomSpectrumValue(om) })); // Recalculate with smooth getCustomSpectrumValue
-        chart.data.datasets[0].data = spectrumDataLine; chart.data.datasets[2].data = customSpectrumDataPoints;
+        const yScale = chart.scales.yS; 
+        const targetPointYPixel = currentMouseYPixel - dragStartYPixelOffset; 
+        let newYValue = yScale.getValueForPixel(targetPointYPixel); 
+        newYValue = Math.max(yScale.min, Math.min(yScale.max, newYValue)); 
+        customSpectrumDataPoints[draggedPointIndex].y = newYValue; 
+        
+        const spectrumDataLine = omegaPlotArray.map(om => ({ x: om, y: getCustomSpectrumValue(om) })); 
+        chart.data.datasets[0].data = spectrumDataLine; 
+        chart.data.datasets[2].data = customSpectrumDataPoints; 
         chart.update('none');
-    } else {
+    } else { 
         const xScale = chart.scales.x, yScale = chart.scales.yS;
         const rect = canvasElements.spectrumAndPhase.getBoundingClientRect();
         const xPixel = evt.clientX - rect.left, yPixel = evt.clientY - rect.top;
         let onDraggablePoint = false; const hoverPixelTolerance = 10;
         customSpectrumDataPoints.forEach((point) => {
-            if (Math.abs(point.x) < 1e-9) return;
+            // if (Math.abs(point.x) < 1e-9) return; 
             const pointXPixel = xScale.getPixelForValue(point.x), pointYPixel = yScale.getPixelForValue(point.y);
             if (Math.abs(xPixel - pointXPixel) <= hoverPixelTolerance && Math.abs(yPixel - pointYPixel) <= hoverPixelTolerance + 5) onDraggablePoint = true;
         });
         canvasElements.spectrumAndPhase.style.cursor = onDraggablePoint ? 'grab' : 'default';
     }
 });
-let lastMouseX = 0, lastMouseY = 0;
+let lastMouseX = 0, lastMouseY = 0; 
 document.addEventListener('mousemove', (e) => { lastMouseX = e.clientX; lastMouseY = e.clientY; });
 function handleDragEnd() {
     if (isDragging) {
         isDragging = false; draggedPointIndex = -1; dragStartYPixelOffset = 0;
-        if (charts.spectrumAndPhase) charts.spectrumAndPhase.options.animation = { duration: 0 };
+        if (charts.spectrumAndPhase) charts.spectrumAndPhase.options.animation = { duration: 0 }; 
         const ev = new MouseEvent('mousemove', { clientX: lastMouseX, clientY: lastMouseY, bubbles: true, cancelable: true });
         canvasElements.spectrumAndPhase.dispatchEvent(ev);
-        updatePlots();
+        updatePlots(); 
     }
 }
 canvasElements.spectrumAndPhase.addEventListener('mouseup', handleDragEnd);
-canvasElements.spectrumAndPhase.addEventListener('mouseout', (evt) => {
+canvasElements.spectrumAndPhase.addEventListener('mouseout', (evt) => { 
     if (isDragging && (evt.relatedTarget === null || evt.relatedTarget.nodeName === 'HTML')) handleDragEnd();
     else if (currentSpectrumMode === 'custom' && !isDragging) canvasElements.spectrumAndPhase.style.cursor = 'default';
 });
 
-// --- Initial Setup --- (No changes)
+// --- Initial Setup ---
 window.onload = () => {
-    OMEGA_AXIS_MAX_DEFAULT = parseFloat(sliders.omega0.max) + parseFloat(sliders.delta_omega.max) + 2;
+    OMEGA_AXIS_MAX_DEFAULT = parseFloat(sliders.omega0.max) + parseFloat(sliders.delta_omega.max) + 2; 
     omegaPlotArray = linspace(OMEGA_AXIS_MIN_DEFAULT, OMEGA_AXIS_MAX_DEFAULT, NUM_OMEGA_PLOT_POINTS);
+    
     initCharts();
     Object.keys(sliders).forEach(key => {
-        if (sliders[key]) setupNumberInputListener(key, key.startsWith('phi') ? 2 : 1);
+        if (sliders[key]) {
+            const precision = (key.startsWith('phi') || key === 'phi2' || key === 'phi3') ? 2 : 1;
+            setupNumberInputListener(key, precision);
+        }
     });
     updateOmega0ControlsCustomMode();
-    initializeOrUpdateCustomSpectrumPoints(true);
-    updatePlots();
+    initializeOrUpdateCustomSpectrumPoints(true); 
+    updatePlots(); 
 };

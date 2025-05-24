@@ -5,32 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Laser Pulse Simulator</title>
     <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/physicify-simulab/physicify-simulab.github.io/refs/heads/main/favicon.png">
-    <!-- Font Awesome CDN -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.1/css/all.min.css" />
-    <!-- Link to the page-specific style sheet -->
     <link rel="stylesheet" href="style.css">
-    <!-- Header & Footer Styles -->
     <link rel="stylesheet" href="https://physicify-simulab.github.io/header.css">
     <link rel="stylesheet" href="https://physicify-simulab.github.io/footer.css">
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <!-- Dynamic Header Include -->
     <div id="header-placeholder"></div>
 
-    <!-- Modified H1 -->
     <h1>
-      <!-- Wrapper for title and copyright -->
       <div class="h1-title-group">
         <span class="h1-title">Laser Pulse Simulator (Qualitative)</span>
-        <!-- ADDED COPYRIGHT ELEMENT -->
         <div class="h1-copyright">
           © 2025 <a href="https://github.com/physicify-simulab" target="_blank" title="Visit Physicify SimuLab on GitHub">Physicify SimuLab</a>
         </div>
-        <!-- END ADDED COPYRIGHT ELEMENT -->
-      </div>
-      <!-- Updated h1-info structure -->
+        </div>
       <div class="h1-info">
         <div class="info-item">
           <span class="info-label">About and discussion</span>
@@ -84,15 +75,11 @@
 
             <h2>Controls</h2>
             <div class="slider-columns-container">
-                <div class="slider-column"> <!-- Column 1 -->
-                    <div class="slider-group" id="omega0SliderGroup"> <!-- Added ID for easier styling/disabling -->
-                        <label for="omega0" id="omega0_label">Central Frequency (ω₀):</label>
+                <div class="slider-column"> <div class="slider-group" id="omega0SliderGroup"> <label for="omega0" id="omega0_label">Central Frequency (ω₀):</label>
                         <div class="slider-input-wrapper">
-                            <input type="range" id="omega0" min="0.1" max="10" value="5" step="0.1"> <!-- Min changed to 0.1 for safety if auto calc is low -->
-                            <input type="number" id="omega0_val" min="0.1" max="10" value="5" step="0.1">
+                            <input type="range" id="omega0" min="0.1" max="10" value="5" step="0.1"> <input type="number" id="omega0_val" min="0.1" max="10" value="5" step="0.1">
                         </div>
-                        <div class="checkbox-group-inline" style="margin-top: 5px;"> <!-- Inline checkbox -->
-                            <input type="checkbox" id="autoOmega0Custom" checked>
+                        <div class="checkbox-group-inline" style="margin-top: 5px;"> <input type="checkbox" id="autoOmega0Custom" checked>
                             <label for="autoOmega0Custom" style="font-size: 0.85em; font-weight: normal;">Auto-calculate from S(ω)</label>
                         </div>
                         <small id="omega0_custom_note" style="display:none; font-size:0.8em; color:#555;">Note: ω₀ sets phase reference. Uncheck "Auto-calculate" for manual input.</small>
@@ -100,8 +87,7 @@
 
                     <button id="resetCustomSpectrumButton" style="display:none; margin-top: 10px; margin-bottom: 15px; width: 100%;">Reset Custom Spectrum to Zero</button>
                     
-                    <div id="gaussianControls"> <!-- This div now only contains delta_omega -->
-                        <div class="slider-group">
+                    <div id="gaussianControls"> <div class="slider-group">
                             <label for="delta_omega">Spectral Bandwidth (Δω - FWHM):</label>
                             <div class="slider-input-wrapper">
                                 <input type="range" id="delta_omega" min="0.2" max="5" value="2" step="0.1">
@@ -110,40 +96,36 @@
                         </div>
                     </div>
 
-                    <!-- <div id="customControls" style="display:none;"> -->
-                        <!-- Custom point density slider removed -->
-                    <!-- </div> -->
-                </div>
+                    </div>
 
-                <div class="slider-column"> <!-- Column 2 -->
-                    <h3>Spectral Phase Coefficients:</h3>
-                    <p>Phase Φ(ω) = c₀ + c₁(ω-ω₀) + c₂(ω-ω₀)² + c₃(ω-ω₀)³</p>
+                <div class="slider-column"> <h3>Spectral Phase Coefficients:</h3>
+                    <p>Phase Φ(ω) = c₀ + c₁(ω-ω₀) + ½ c₂(ω-ω₀)² + ⅙ c₃(ω-ω₀)³</p>
                     <div class="slider-group">
-                        <label for="phi0">Constant (c₀):</label>
+                        <label for="phi0">Constant term c₀ (Constant):</label>
                         <div class="slider-input-wrapper">
                             <input type="range" id="phi0" min="-6.3" max="6.3" value="0" step="0.1">
                             <input type="number" id="phi0_val" min="-6.3" max="6.3" value="0" step="0.1">
                         </div>
                     </div>
                     <div class="slider-group">
-                        <label for="phi1">Linear (c₁):</label>
+                        <label for="phi1">Linear term c₁ (Group Delay):</label> 
                         <div class="slider-input-wrapper">
                             <input type="range" id="phi1" min="-5" max="5" value="0" step="0.1">
                             <input type="number" id="phi1_val" min="-5" max="5" value="0" step="0.1">
                         </div>
                     </div>
                     <div class="slider-group">
-                        <label for="phi2">Quadratic (c₂):</label>
+                        <label for="phi2">Quadratic term c₂ (GDD):</label> 
                         <div class="slider-input-wrapper">
-                            <input type="range" id="phi2" min="-2" max="2" value="0" step="0.05">
-                            <input type="number" id="phi2_val" min="-2" max="2" value="0" step="0.05">
+                            <input type="range" id="phi2" min="-4" max="4" value="0" step="0.1"> 
+                            <input type="number" id="phi2_val" min="-4" max="4" value="0" step="0.1"> 
                         </div>
                     </div>
                     <div class="slider-group">
-                        <label for="phi3">Cubic (c₃):</label>
+                        <label for="phi3">Cubic term c₃ (TOD):</label> 
                         <div class="slider-input-wrapper">
-                            <input type="range" id="phi3" min="-2" max="2" value="0" step="0.02">
-                            <input type="number" id="phi3_val" min="-2" max="2" value="0" step="0.02">
+                            <input type="range" id="phi3" min="-12" max="12" value="0" step="0.2"> 
+                            <input type="number" id="phi3_val" min="-12" max="12" value="0" step="0.2"> 
                         </div>
                     </div>
                 </div>
@@ -180,10 +162,8 @@
 
     <script src="script.js"></script>
 
-    <!-- Dynamic Footer Include -->
     <div id="footer-placeholder"></div>
 
-    <!-- Script to include Header/Footer -->
     <script>
         function includeHTML(elementId, filePath) {
           fetch(filePath)
