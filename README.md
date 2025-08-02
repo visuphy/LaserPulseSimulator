@@ -2,7 +2,7 @@
 
 Welcome to the **Laser Pulse Simulator**, a web-based interactive tool for visualizing the formation of a laser pulse from its constituent frequencies. This simulator qualitatively demonstrates how the spectral amplitude and phase of continuous waves determine the final temporal shape and intensity of a pulse.
 
-[![Laser Pulse Simulator Screenshot](Screenshot.png)](https://physicify-simulab.github.io/LaserPulseSimulator/visualphase.html)
+[![Laser Pulse Simulator Screenshot](Screenshot.png)](https://visuphy.github.io/LaserPulseSimulator/visualphase.html)
 
 *Screenshot of the simulator interface, showing the spectral and temporal plots.*
 
@@ -10,7 +10,7 @@ Welcome to the **Laser Pulse Simulator**, a web-based interactive tool for visua
 
 ## 🚀 Live Demo
 
-**[Click here to launch the simulator!](https://physicify-simulab.github.io/LaserPulseSimulator/)**
+**[Click here to launch the simulator!](https://visuphy.github.io/LaserPulseSimulator/)**
 
 ---
 
@@ -47,7 +47,7 @@ Key concepts you can explore include:
 
 ## 🛠️ How to Use
 
-1.  **Launch the Simulator**: Open the [live demo link](https://physicify-simulab.github.io/LaserPulseSimulator/).
+1.  **Launch the Simulator**: Open the [live demo link](https://visuphy.github.io/LaserPulseSimulator/).
 2.  **Select a Spectrum Mode**:
     * Choose **Gaussian S(ω)** and use the sliders to set the Central Frequency (`ω₀`) and Spectral Bandwidth (`Δω`).
     * Or, choose **Custom S(ω)** and drag the red dots on the top-left chart to define a custom spectrum shape.
@@ -69,13 +69,13 @@ Key concepts you can explore include:
 
 ## 🤝 Feedback & Contributions
 
-We appreciate your feedback! If you find any bugs or have suggestions for new features, please open an issue on the [GitHub Issues page](https://github.com/physicify-simulab/LaserPulseSimulator/issues).
+We appreciate your feedback! If you find any bugs or have suggestions for new features, please open an issue on the [GitHub Issues page](https://github.com/visuphy/LaserPulseSimulator/issues).
 
 ---
 
 ## ✒️ Author
 
-This project was originally created by **Hussein-Tofaili** and is now maintained under the **Physicify SimuLab** project and is licensed under MIT.
+This project was originally created by **Hussein-Tofaili** and is now maintained under the **VisuPhy** project and is licensed under MIT.
 
 * **Original Author**: [Hussein-Tofaili](https://github.com/Hussein-Tofaili)
-* **GitHub Repository**: [physicify-simulab/LaserPulseSimulator](https://github.com/physicify-simulab/LaserPulseSimulator)
+* **GitHub Repository**: [visuphy/LaserPulseSimulator](https://github.com/visuphy/LaserPulseSimulator)
